@@ -93,6 +93,10 @@ func (p *contextProviderK8sSecrets) getReader(namespace string) (client.Reader, 
 		// Wait for the cache to be initialized.
 		newReader.WaitForCacheSync(p.ctx)
 	}
+	p.logger.Infof(
+		"[MMO] Returning reader %v",
+		reader,
+	)
 	return reader, nil
 }
 
@@ -139,6 +143,10 @@ func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
 		p.logger.Errorf("[MMO] Could not create K8S client: %v", err)
 		return "", false
 	}
+	p.logger.Infof(
+		"[MMO] Got reader %v",
+		reader,
+	)
 	secretName := tokens[2]
 	secretVar := tokens[3]
 
