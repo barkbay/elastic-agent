@@ -93,10 +93,6 @@ func (p *contextProviderK8sSecrets) getReader(namespace string) (client.Reader, 
 		// Wait for the cache to be initialized.
 		newReader.WaitForCacheSync(p.ctx)
 	}
-	p.logger.Infof(
-		"[MMO] Returning reader %v",
-		reader,
-	)
 	return reader, nil
 }
 
@@ -120,17 +116,13 @@ func ContextProviderBuilder(logger *logger.Logger, c *config.Config, _ bool) (co
 }
 
 func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
-	p.logger.Infof(
-		"[MMO] Fetch %s",
-		key,
-	)
 	// key = "kubernetes_secrets.somenamespace.somesecret.value"
 	tokens := strings.Split(key, ".")
 	if len(tokens) > 0 && tokens[0] != "kubernetes_secrets" {
 		return "", false
 	}
 	if len(tokens) != 4 {
-		p.logger.Errorf(
+		p.logger.Debugf(
 			"not valid secret key: %v. Secrets should be of the following format %v",
 			key,
 			"kubernetes_secrets.somenamespace.somesecret.value",
@@ -140,34 +132,27 @@ func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
 	ns := tokens[1]
 	reader, err := p.getReader(ns)
 	if err != nil {
-		p.logger.Errorf("[MMO] Could not create K8S client: %v", err)
+		p.logger.Errorf("Could not create K8S client: %v", err)
 		return "", false
 	}
-	p.logger.Infof(
-		"[MMO] Got reader %v",
-		reader,
-	)
 	secretName := tokens[2]
 	secretVar := tokens[3]
-
-	p.logger.Infof("[MMO] Attempting to retrieve value %v in secret %v", secretVar, secretName)
 
 	secret := corev1.Secret{}
 	if err := reader.Get(context.TODO(), client.ObjectKey{Namespace: ns, Name: secretName}, &secret); err != nil {
 		if k8serrors.IsNotFound(err) {
-			p.logger.Errorf("[MMO] Secret %s/%s not found: %v", ns, secretName, err)
+			p.logger.Errorf("Secret %s/%s not found: %v", ns, secretName, err)
 			return "", false
 		}
-		p.logger.Errorf("[MMO] Could not retrieve secret from k8s API: %v", err)
+		p.logger.Errorf("Could not retrieve secret from k8s API: %v", err)
 		return "", false
 	}
-	p.logger.Infof("Got secret %s/%s", ns, secretName)
 	if _, ok := secret.Data[secretVar]; !ok {
-		p.logger.Errorf("[MMO] Could not retrieve value %v for secret %v", secretVar, secretName)
+		p.logger.Errorf("Could not retrieve value %v for secret %v", secretVar, secretName)
 		return "", false
 	}
 	secretString := secret.Data[secretVar]
-	p.logger.Infof("[MMO]Retrieved value %v for secret %v, len: %d", secretVar, secretName, len(secretString))
+	p.logger.Infof("[MMO] Retrieved value %v for secret %v, len: %d", secretVar, secretName, len(secretString))
 	return string(secretString), true
 }
 
