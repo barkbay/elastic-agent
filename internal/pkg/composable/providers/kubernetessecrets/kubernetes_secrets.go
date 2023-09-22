@@ -138,6 +138,8 @@ func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
 	secretName := tokens[2]
 	secretVar := tokens[3]
 
+	p.logger.Infof("Attempting to retrieve value %v in secret %v", secretVar, secretName)
+
 	secret := corev1.Secret{}
 	if err := reader.Get(context.TODO(), client.ObjectKey{Namespace: ns, Name: secretName}, &secret); err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -147,6 +149,7 @@ func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
 		p.logger.Errorf("Could not retrieve secret from k8s API: %v", err)
 		return "", false
 	}
+	p.logger.Infof("Got secret %s/%s", ns, secretName)
 	if _, ok := secret.Data[secretVar]; !ok {
 		p.logger.Errorf("Could not retrieve value %v for secret %v", secretVar, secretName)
 		return "", false
