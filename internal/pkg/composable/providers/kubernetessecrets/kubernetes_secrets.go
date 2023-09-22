@@ -152,6 +152,7 @@ func (p *contextProviderK8sSecrets) Fetch(key string) (string, bool) {
 		return "", false
 	}
 	secretString := secret.Data[secretVar]
+	p.logger.Infof("Retrieved value %v for secret %v, len: %d", secretVar, secretName, len(secretString))
 	return string(secretString), true
 }
 
