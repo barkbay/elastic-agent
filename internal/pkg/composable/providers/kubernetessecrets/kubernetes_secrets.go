@@ -92,6 +92,8 @@ func (p *contextProviderK8sSecrets) getReader(namespace string) (client.Reader, 
 		}()
 		// Wait for the cache to be initialized.
 		newReader.WaitForCacheSync(p.ctx)
+	} else {
+		p.logger.Infof("[MMO] REUSE reader for %sq", namespace)
 	}
 	return reader, nil
 }
